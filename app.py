@@ -5,7 +5,7 @@ import uuid
 
 app = Flask(__name__)
 
-# Define folder paths for sample voices and output folder
+# Define folder paths
 app.config['UPLOAD_FOLDER'] = "uploads"
 app.config['OUTPUT_FOLDER'] = "outputs"
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -16,7 +16,7 @@ tts = TTS(model_name="tts_models/multilingual/multi-dataset/xtts_v2")
 
 @app.route("/")
 def index():
-    # List available speakers dynamically from the speaker_samples folder
+    # List available speakers from speaker_samples folder
     speakers = [f.split('.')[0] for f in os.listdir('speaker_samples') if f.endswith('.wav')]
     return render_template("index.html", speakers=speakers)
 
@@ -27,14 +27,12 @@ def speak_form():
     selected_speaker = request.form.get("speaker_choice")
 
     if not selected_speaker or not text.strip():
-        return "Please provide both text and choose a speaker."
+        return "Please provide both text and a speaker."
 
-    # Get the correct speaker sample path
     speaker_path = os.path.join("speaker_samples", f"{selected_speaker}.wav")
     if not os.path.exists(speaker_path):
         return f"Speaker sample not found: {selected_speaker}"
 
-    # Generate cloned speech
     output_filename = f"{uuid.uuid4().hex}_cloned.wav"
     output_path = os.path.join(app.config['OUTPUT_FOLDER'], output_filename)
 
@@ -47,7 +45,8 @@ def speak_form():
         )
         return render_template("index.html",
                                cloned_audio=url_for('serve_file', folder='outputs', filename=output_filename),
-                               original_audio=url_for('serve_file', folder='speaker_samples', filename=f"{selected_speaker}.wav"))
+                               original_audio=url_for('serve_file', folder='speaker_samples', filename=f"{selected_speaker}.wav"),
+                               speakers=[f.split('.')[0] for f in os.listdir('speaker_samples') if f.endswith('.wav')])
     except Exception as e:
         return f"Error during TTS generation: {e}"
 
@@ -56,8 +55,71 @@ def serve_file(folder, filename):
     file_path = os.path.join(app.root_path, folder, filename)
     return send_file(file_path)
 
+# === ✅ Render/Deployment Compatibility Fix ===
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=True)
+
+# from flask import Flask, request, render_template, send_file, url_for
+# from TTS.api import TTS
+# import os
+# import uuid
+
+# app = Flask(__name__)
+
+# # Define folder paths for sample voices and output folder
+# app.config['UPLOAD_FOLDER'] = "uploads"
+# app.config['OUTPUT_FOLDER'] = "outputs"
+# os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+# os.makedirs(app.config['OUTPUT_FOLDER'], exist_ok=True)
+
+# # Load the TTS model once when the app starts
+# tts = TTS(model_name="tts_models/multilingual/multi-dataset/xtts_v2")
+
+# @app.route("/")
+# def index():
+#     # List available speakers dynamically from the speaker_samples folder
+#     speakers = [f.split('.')[0] for f in os.listdir('speaker_samples') if f.endswith('.wav')]
+#     return render_template("index.html", speakers=speakers)
+
+# @app.route("/speak_form", methods=["POST"])
+# def speak_form():
+#     text = request.form.get("text", "")
+#     language = request.form.get("language", "en")
+#     selected_speaker = request.form.get("speaker_choice")
+
+#     if not selected_speaker or not text.strip():
+#         return "Please provide both text and choose a speaker."
+
+#     # Get the correct speaker sample path
+#     speaker_path = os.path.join("speaker_samples", f"{selected_speaker}.wav")
+#     if not os.path.exists(speaker_path):
+#         return f"Speaker sample not found: {selected_speaker}"
+
+#     # Generate cloned speech
+#     output_filename = f"{uuid.uuid4().hex}_cloned.wav"
+#     output_path = os.path.join(app.config['OUTPUT_FOLDER'], output_filename)
+
+#     try:
+#         tts.tts_to_file(
+#             text=text,
+#             speaker_wav=speaker_path,
+#             language=language,
+#             file_path=output_path
+#         )
+#         return render_template("index.html",
+#                                cloned_audio=url_for('serve_file', folder='outputs', filename=output_filename),
+#                                original_audio=url_for('serve_file', folder='speaker_samples', filename=f"{selected_speaker}.wav"))
+#     except Exception as e:
+#         return f"Error during TTS generation: {e}"
+
+# @app.route("/<folder>/<filename>")
+# def serve_file(folder, filename):
+#     file_path = os.path.join(app.root_path, folder, filename)
+#     return send_file(file_path)
+
+# if __name__ == "__main__":
+#     app.run(debug=True)
 
 
 
