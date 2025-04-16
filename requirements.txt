@@ -6,3 +6,4 @@ scipy>=1.7.3
 soundfile>=0.10.3
 fsspec>=2023.1.0
 gunicorn
+torchaudio
