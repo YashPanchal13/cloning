@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Voice Cloner</title>
+</head>
+<body>
+    <h2>Voice Cloner - XTTS</h2>
+    <form action="/speak_form" method="post">
+        <label for="text">Enter text:</label><br>
+        <textarea name="text" rows="6" cols="60" placeholder="Type something..." required></textarea><br><br>
+
+        <label for="language">Select Language:</label><br>
+        <select name="language" required>
+            <option value="en">English</option>
+            <option value="hi">Hindi</option>
+            <option value="fr">French</option>
+            <option value="es">Spanish</option>
+            <option value="de">German</option>
+        </select><br><br>
+
+        <label for="speaker_choice">Choose a voice:</label><br>
+        <select name="speaker_choice" required>
+            {% for speaker in speakers %}
+                <option value="{{ speaker }}">{{ speaker.capitalize() }}</option>
+            {% endfor %}
+        </select><br><br>
+
+        <button type="submit">Generate Voice</button>
+    </form>
+
+    {% if cloned_audio %}
+        <h3>Cloned Voice:</h3>
+        <audio controls>
+            <source src="{{ cloned_audio }}" type="audio/wav">
+        </audio>
+        <br>
+        <a href="{{ cloned_audio }}" download>Download Cloned Audio</a>
+    {% endif %}
+
+    {% if original_audio %}
+        <h3>Speaker Reference (Selected):</h3>
+        <audio controls>
+            <source src="{{ original_audio }}" type="audio/wav">
+        </audio>
+    {% endif %}
+</body>
+</html>
